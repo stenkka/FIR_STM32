@@ -31,33 +31,14 @@ sampling frequency: 2000 Hz
 
 */
 
-double filterTaps[TAPS_NUM] = {
-  0.042153588198237606,
-  0.09254487085124112,
-  0.08627292857696542,
-  -0.0066099899662500515,
-  -0.09647274861311855,
-  -0.03655279492291376,
-  0.1889147108950072,
-  0.4024647831036765,
-  0.4024647831036765,
-  0.1889147108950072,
-  -0.03655279492291376,
-  -0.09647274861311855,
-  -0.0066099899662500515,
-  0.08627292857696542,
-  0.09254487085124112,
-  0.042153588198237606
-};
-
 typedef struct {
 	double buffer[TAPS_NUM];
 	double output;
 	double *taps;
 	uint8_t index;
-}FIR_Filter;
+}FIR_Filter_t;
 
-void initFIR_Filter(FIR_Filter *filter);
-void updateFIR_Filter(FIR_Filter *filter, float input);
+void initFIR_Filter(FIR_Filter_t *filter);
+void updateFIR_Filter(FIR_Filter_t *filter, float input);
 
 #endif /* SRC_FIR_H_ */
