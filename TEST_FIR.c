@@ -13,10 +13,9 @@
 #include <memory.h>
 #include <math.h>
 
-Uint32 t_end, t_start, t_projectile, startTick;
+Uint32 t_end, t_start, startTick;
 
-
-prNode_t *projectileListTmp, *projectileListHead = NULL;
+Node_t *nodeListTmp, *nodeListHead = NULL;
 
 uint8_t dataPointColorR = 255;
 uint8_t dataPointColorG = 0;
@@ -65,14 +64,14 @@ TTF_Font* initFont()
 void renderCircles()
 {
     SDL_SetRenderDrawColor(app.renderer,0,0,255,0);
-    projectileListTmp = projectileListHead;
-    while (projectileListTmp != NULL)
+    nodeListTmp = nodeListHead;
+    while (nodeListTmp != NULL)
     {
-        SDL_SetRenderDrawColor(app.renderer, projectileListTmp->projectile.r, projectileListTmp->projectile.g, projectileListTmp->projectile.b, 100);
+        SDL_SetRenderDrawColor(app.renderer, nodeListTmp->circle.r, nodeListTmp->circle.g, nodeListTmp->circle.b, 100);
 
-        const int32_t diameter = projectileListTmp->projectile.radius * 2;
+        const int32_t diameter = nodeListTmp->circle.radius * 2;
 
-        int32_t x = (projectileListTmp->projectile.radius - 1);
+        int32_t x = (nodeListTmp->circle.radius - 1);
         int32_t y = 0;
         int32_t tx = 1;
         int32_t ty = 1;
@@ -82,14 +81,14 @@ void renderCircles()
         while (x >= y)
         {
             //  Each of the following renders an octant of the circle
-            SDL_RenderDrawPoint(app.renderer, projectileListTmp->projectile.x + x, projectileListTmp->projectile.y - y);
-            SDL_RenderDrawPoint(app.renderer, projectileListTmp->projectile.x + x, projectileListTmp->projectile.y + y);
-            SDL_RenderDrawPoint(app.renderer, projectileListTmp->projectile.x - x, projectileListTmp->projectile.y - y);
-            SDL_RenderDrawPoint(app.renderer, projectileListTmp->projectile.x - x, projectileListTmp->projectile.y + y);
-            SDL_RenderDrawPoint(app.renderer, projectileListTmp->projectile.x + y, projectileListTmp->projectile.y - x);
-            SDL_RenderDrawPoint(app.renderer, projectileListTmp->projectile.x + y, projectileListTmp->projectile.y + x);
-            SDL_RenderDrawPoint(app.renderer, projectileListTmp->projectile.x - y, projectileListTmp->projectile.y - x);
-            SDL_RenderDrawPoint(app.renderer, projectileListTmp->projectile.x - y, projectileListTmp->projectile.y + x);
+            SDL_RenderDrawPoint(app.renderer, nodeListTmp->circle.x + x, nodeListTmp->circle.y - y);
+            SDL_RenderDrawPoint(app.renderer, nodeListTmp->circle.x + x, nodeListTmp->circle.y + y);
+            SDL_RenderDrawPoint(app.renderer, nodeListTmp->circle.x - x, nodeListTmp->circle.y - y);
+            SDL_RenderDrawPoint(app.renderer, nodeListTmp->circle.x - x, nodeListTmp->circle.y + y);
+            SDL_RenderDrawPoint(app.renderer, nodeListTmp->circle.x + y, nodeListTmp->circle.y - x);
+            SDL_RenderDrawPoint(app.renderer, nodeListTmp->circle.x + y, nodeListTmp->circle.y + x);
+            SDL_RenderDrawPoint(app.renderer, nodeListTmp->circle.x - y, nodeListTmp->circle.y - x);
+            SDL_RenderDrawPoint(app.renderer, nodeListTmp->circle.x - y, nodeListTmp->circle.y + x);
 
             if (error <= 0)
             {
@@ -105,7 +104,7 @@ void renderCircles()
                 error += (tx - diameter);
             }
         }
-        projectileListTmp = projectileListTmp->next;
+        nodeListTmp = nodeListTmp->next;
     }
 }
 
@@ -119,25 +118,27 @@ void render()
 
     renderCircles();
 
+    
+
+    TTF_RenderText_Solid(app.myFont, "Test", app.textColor);
+
     SDL_RenderCopy(app.renderer,app.textureText,NULL,&app.messageRect);
 	
+    //SDL_RenderTexture(app.renderer, app.textureText, NULL, &app.messageRect);
+
 	SDL_RenderPresent(app.renderer);
 }
 
-void spawnDataPoint(int x, int y, int radius, int* color)
+void spawnDataPoint(int x, int y, int radius, int* color, char* label)
 {
-    prependProjectileNode(&projectileListHead, createProjectileNode(projectileListHead));
-    projectileListHead->projectile.x = x;
-    projectileListHead->projectile.y = y;
-    projectileListHead->projectile.radius = radius;
-    projectileListHead->projectile.r = color[0];
-    projectileListHead->projectile.g = color[1];
-    projectileListHead->projectile.b = color[2];
-}
-
-removeProjectiles()
-{
-
+    prependNode(&nodeListHead, createNode(nodeListHead));
+    nodeListHead->circle.x = x;
+    nodeListHead->circle.y = y;
+    nodeListHead->circle.radius = radius;
+    nodeListHead->circle.r = color[0];
+    nodeListHead->circle.g = color[1];
+    nodeListHead->circle.b = color[2];
+    sprintf(nodeListHead->label, "%s", label);
 }
 
 const char* getField(char* line, int num)
@@ -189,8 +190,8 @@ int main(int argc, char* argv[])
 
     char line[1024];
 
-    FIR_Filter_t* lowPassFIR = malloc(sizeof(FIR_Filter_t));
-    initFIR_Filter(lowPassFIR);
+    FIR_Filter_t* lowPassFIR = (FIR_Filter_t*)malloc(sizeof(FIR_Filter_t));
+    initFIR_Filter(lowPassFIR, 16);
 	
     while (app.running)
     {
@@ -209,7 +210,7 @@ int main(int argc, char* argv[])
 
         if (kbmState[SDL_SCANCODE_R])
         {
-            freeProjectileNodes(&projectileListHead);
+            freeNodes(&nodeListHead);
         }
 		if (kbmState[SDL_SCANCODE_ESCAPE])
         {
@@ -228,10 +229,10 @@ int main(int argc, char* argv[])
                 if (!inputStr) { break; }
                 double input = 10 * strtod(inputStr, NULL);
                 // plot FIR input
-                spawnDataPoint(x, 300 + input, 1, red);
+                spawnDataPoint(x, 200 + input, 1, red, "Input");
                 // Do filtering and plot FIR output
                 updateFIR_Filter(lowPassFIR, input);
-                spawnDataPoint(x, 500 + lowPassFIR->output, 1, blue);
+                spawnDataPoint(x, 600 + lowPassFIR->output, 1, blue, "Output");
                 free(tmp);
                 x++;
                 SDL_Delay(1);
@@ -243,6 +244,7 @@ int main(int argc, char* argv[])
         }
         app.render();
 	}
+    free(lowPassFIR->buffer);
     free(lowPassFIR);
 	SDL_DestroyTexture(app.textureText);
 	SDL_DestroyWindow(app.window);

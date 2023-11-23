@@ -5,6 +5,7 @@
  *      Author: aaron
  */
 #include "FIR.h"
+#include <stdlib.h>
 /*
 
 FIR filter designed with
@@ -23,8 +24,6 @@ sampling frequency: 100 Hz
   actual attenuation = -28.65474091653491 dB
 
 */
-
-#define TAPS_NUM 16
 
 static double filterTaps[TAPS_NUM] = {
   0.0009503977575911028,
@@ -45,9 +44,11 @@ static double filterTaps[TAPS_NUM] = {
   0.0009503977575911028
 };
 
-void initFIR_Filter(FIR_Filter_t *filter)
+void initFIR_Filter(FIR_Filter_t *filter, const uint8_t order)
 {
-	for (int i = 0;i<TAPS_NUM;i++)
+    filter->order = order;
+    filter->buffer = malloc(order * sizeof(double));
+	for (int i = 0;i<filter->order;i++)
 	{
 		filter->buffer[i] = 0;
 	}
@@ -60,11 +61,11 @@ void initFIR_Filter(FIR_Filter_t *filter)
 void updateFIR_Filter(FIR_Filter_t *filter, float input)
 {
     filter->output = 0;
-	if (filter->index == TAPS_NUM) { filter->index = 0; }
+	if (filter->index == filter->order) { filter->index = 0; }
 	filter->buffer[filter->index] = input;
-	for (int i = 0;i<TAPS_NUM;i++)
+	for (int i = 0;i<filter->order;i++)
 	{
-		filter->output += filter->buffer[(filter->index + i) % TAPS_NUM] * filterTaps[i];
+		filter->output += filter->buffer[(filter->index + i) % filter->order] * filterTaps[i];
 	}
 	filter->index++;
 }
